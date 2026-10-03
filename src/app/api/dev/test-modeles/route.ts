@@ -1,6 +1,6 @@
 import { Error as MongooseError } from "mongoose";
 import { connectDB } from "@/lib/db";
-import { Saison } from "@/models/saison";
+import { Saison } from "@/models/Saison";
 import { Parent } from "@/models/Parent";
 import { Participant } from "@/models/Participant";
 
