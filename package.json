@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "db:seed": "tsx --conditions=react-server --env-file=.env.local scripts/seed.ts",
-    "admin:creer": "tsx --conditions=react-server --env-file=.env.local scripts/creer-admin.ts"
+    "admin:creer": "tsx --conditions=react-server --env-file=.env.local scripts/creer-admin.ts",
+    "admin:mot-de-passe": "tsx --conditions=react-server --env-file=.env.local scripts/changer-mot-de-passe.ts"
   },
   "dependencies": {
     "@better-auth/mongo-adapter": "^1.7.7",
