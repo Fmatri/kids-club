@@ -1,26 +1,75 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ============================================================
+   Thème Pygmalion — couleurs et formes (charte validée le 17/10/2026)
+   Chaque ligne crée des raccourcis Tailwind :
+   --color-creme  → bg-creme, text-creme, border-creme…
+   --radius-carte → rounded-carte
+   --shadow-carte → shadow-carte
+   ============================================================ */
+@theme {
+  /* Fonds et surfaces */
+  --color-creme: #f7f3ef;
+  --color-surface: #ffffff;
+  --color-surface-douce: #fbf8f5;
+  --color-bordure: #ede7e1;
+
+  /* Texte et actions (presque noir) */
+  --color-encre: #1c1917;
+  --color-encre-douce: #6b635d;
+  --color-encre-pale: #78716c;
+
+  /* Pastels (cartes, séances, programmes) */
+  --color-pastel-rose: #f6c9cc;
+  --color-pastel-peche: #fad9b8;
+  --color-pastel-lavande: #d9d0f7;
+  --color-pastel-menthe: #c3ebdb;
+  --color-pastel-citron: #e4f5a1;
+
+  /* États : fond doux + texte foncé lisible */
+  --color-succes-fond: #ddf3e8;
+  --color-succes: #17603f;
+  --color-attention-fond: #fde7d3;
+  --color-attention: #8a4510;
+  --color-neutre-fond: #efeae5;
+  --color-neutre: #57534e;
+
+  /* Formes */
+  --radius-carte: 24px;
+  --shadow-carte: 0 1px 2px rgb(28 25 23 / 0.03), 0 12px 32px -18px rgb(28 25 23 / 0.18);
+  --shadow-carte-survol: 0 1px 2px rgb(28 25 23 / 0.04), 0 22px 44px -20px rgb(28 25 23 / 0.28);
+
+  /* Courbe d'animation « premium » (départ rapide, arrivée douce) */
+  --ease-premium: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+/* Polices chargées dans layout.tsx (étape 4.1.a)
+   font-sans  → Inter (tout le texte)
+   font-serif → Instrument Serif (accents des grands titres) */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-instrument-serif), Georgia, serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    background-color: var(--color-creme);
+    color: var(--color-encre);
+  }
+  body {
+    font-family: var(--font-sans);
+    min-height: 100dvh;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Respect du réglage « réduire les animations » de l'ordinateur ou du téléphone */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
