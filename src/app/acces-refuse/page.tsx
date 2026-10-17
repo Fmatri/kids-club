@@ -1,5 +1,4 @@
-import { BoutonDeconnexion } from "@/components/BoutonDeconnexion";
-
+   import BoutonDeconnexion from "@/components/BoutonDeconnexion";
 // Affichée quand un compte connecté n'a PAS le rôle admin
 export default function PageAccesRefuse() {
   return (

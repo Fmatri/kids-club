@@ -160,3 +160,10 @@
     scroll-behavior: auto !important;
   }
 }
+/* Fond de l'admin : crème + deux halos pastel très doux */
+@utility fond-degrade {
+  background-color: var(--color-creme);
+  background-image:
+    radial-gradient(1200px 600px at 85% -10%, #fbe7da 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 30%, #ece6fa 0%, transparent 55%);
+}
