@@ -1,4 +1,8 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
 
 /* ============================================================
    Thème Pygmalion — couleurs et formes (charte validée le 17/10/2026)
@@ -43,22 +47,105 @@
   --ease-premium: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* Polices chargées dans layout.tsx (étape 4.1.a)
-   font-sans  → Inter (tout le texte)
-   font-serif → Instrument Serif (accents des grands titres) */
+/* ============================================================
+   Liens entre les noms de shadcn et nos variables
+   (polices chargées dans layout.tsx ; couleurs définies dans :root plus bas)
+   ============================================================ */
 @theme inline {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-instrument-serif), Georgia, serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* ============================================================
+   Couleurs utilisées par les composants shadcn = palette Pygmalion
+   (pas de mode sombre pour l'admin)
+   ============================================================ */
+:root {
+  --background: #f7f3ef;            /* crème */
+  --foreground: #1c1917;            /* encre */
+  --card: #ffffff;
+  --card-foreground: #1c1917;
+  --popover: #ffffff;
+  --popover-foreground: #1c1917;
+  --primary: #1c1917;               /* boutons principaux : noir encre */
+  --primary-foreground: #ffffff;
+  --secondary: #efeae5;             /* boutons secondaires : beige doux */
+  --secondary-foreground: #1c1917;
+  --muted: #f5f0eb;
+  --muted-foreground: #6b635d;
+  --accent: #f5f0eb;                /* survol des menus */
+  --accent-foreground: #1c1917;
+  --destructive: #b42318;           /* suppression / erreur */
+  --border: #ede7e1;
+  --input: #e7e0d9;
+  --ring: #1c1917;                  /* contour de focus (clavier) */
+  --chart-1: #f6c9cc;               /* pastels des graphiques */
+  --chart-2: #fad9b8;
+  --chart-3: #d9d0f7;
+  --chart-4: #c3ebdb;
+  --chart-5: #e4f5a1;
+  --radius: 1rem;
+  --sidebar: #f7f3ef;
+  --sidebar-foreground: #1c1917;
+  --sidebar-primary: #1c1917;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ffffff;
+  --sidebar-accent-foreground: #1c1917;
+  --sidebar-border: #ede7e1;
+  --sidebar-ring: #1c1917;
 }
 
 @layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
   html {
-    background-color: var(--color-creme);
-    color: var(--color-encre);
+    @apply font-sans;
   }
   body {
-    font-family: var(--font-sans);
     min-height: 100dvh;
+    @apply bg-background text-foreground;
   }
 }
 
