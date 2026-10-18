@@ -1,16 +1,21 @@
-   import BoutonDeconnexion from "@/components/BoutonDeconnexion";
-// Affichée quand un compte connecté n'a PAS le rôle admin
+import { ShieldAlert } from "lucide-react";
+import BoutonDeconnexion from "@/components/BoutonDeconnexion";
+
 export default function PageAccesRefuse() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-neutral-200">
-        <h1 className="text-xl font-semibold text-neutral-900">Accès refusé</h1>
-        <p className="mt-2 text-sm text-neutral-600">
-          Ce compte n&apos;a pas accès à l&apos;espace de gestion.
+    <main className="fond-degrade flex min-h-dvh items-center justify-center p-4">
+      <div className="apparition flex w-full max-w-md flex-col items-center gap-5 rounded-carte border border-bordure bg-surface px-6 py-12 text-center shadow-carte">
+        <span className="flex size-16 items-center justify-center rounded-full bg-pastel-rose">
+          <ShieldAlert className="size-7" strokeWidth={1.6} aria-hidden />
+        </span>
+        <h1 className="text-3xl font-semibold tracking-tight">
+          Accès <span className="font-serif text-[1.15em] font-normal italic">réservé</span>
+        </h1>
+        <p className="text-sm text-encre-douce">
+          Cet espace est réservé à la gérante du club. S’il s’agit d’une erreur, déconnectez-vous puis
+          reconnectez-vous avec le bon compte.
         </p>
-        <div className="mt-6 flex justify-center">
-          <BoutonDeconnexion />
-        </div>
+        <BoutonDeconnexion />
       </div>
     </main>
   );

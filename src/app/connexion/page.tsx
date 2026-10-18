@@ -1,74 +1,96 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import CollageOeuvres from "@/components/CollageOeuvres";
 import { authClient } from "@/lib/auth-client";
+
+function messageErreur(erreur: { status?: number; code?: string }) {
+  if (erreur.status === 429) return "Trop de tentatives. Réessayez dans une minute.";
+  if (erreur.code === "INVALID_EMAIL_OR_PASSWORD") return "E-mail ou mot de passe incorrect.";
+  return "Une erreur est survenue. Réessayez.";
+}
 
 export default function PageConnexion() {
   const router = useRouter();
   const [erreur, setErreur] = useState<string | null>(null);
   const [enCours, setEnCours] = useState(false);
 
-  async function seConnecter(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); // empêche le rechargement de la page
+  async function seConnecter(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const donnees = new FormData(e.currentTarget);
     setErreur(null);
     setEnCours(true);
 
-    const donnees = new FormData(event.currentTarget);
     const { error } = await authClient.signIn.email({
-      email: String(donnees.get("email")).trim().toLowerCase(),
-      password: String(donnees.get("motDePasse")),
+      email: String(donnees.get("email")),
+      password: String(donnees.get("password")),
     });
 
-    setEnCours(false);
-
     if (error) {
-      setErreur(messageErreur(error.status, error.code));
+      setErreur(messageErreur(error));
+      setEnCours(false);
       return;
     }
-
-    // Connexion réussie : direction l'espace de gestion
     router.push("/admin");
     router.refresh();
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-sm ring-1 ring-neutral-200">
-        <h1 className="text-center text-2xl font-semibold text-neutral-900">Pygmalion Art Club</h1>
-        <p className="mt-1 text-center text-sm text-neutral-500">Espace de gestion</p>
+    <main className="flex min-h-dvh flex-wrap bg-creme">
+      {/* Gauche : formulaire */}
+      <section className="flex flex-[1_1_420px] flex-col justify-between gap-10 px-5 py-7 md:px-14 md:py-10">
+        <div className="apparition flex items-center gap-3">
+          <span className="flex size-[42px] items-center justify-center rounded-[14px] bg-linear-135 from-pastel-rose to-pastel-lavande font-serif text-[26px] italic">
+            P
+          </span>
+          <span className="text-base font-bold">
+            Pygmalion <span className="font-medium text-encre-pale">· Gestion</span>
+          </span>
+        </div>
 
-        <form onSubmit={seConnecter} className="mt-8 space-y-5">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-neutral-700">
-              E-mail
+        <form
+          onSubmit={seConnecter}
+          className="apparition flex w-full max-w-[400px] flex-col gap-4.5 [animation-delay:100ms]"
+        >
+          <div className="mb-2 flex flex-col gap-2">
+            <h1 className="text-[44px] leading-[1.05] font-semibold tracking-[-0.03em]">
+              Bon <span className="font-serif text-[1.15em] font-normal italic">retour</span>
+            </h1>
+            <p className="text-[15px] text-encre-douce">Connectez-vous pour gérer le club.</p>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="email" className="text-[13px] font-semibold">
+              Adresse e-mail
             </label>
             <input
               id="email"
               name="email"
               type="email"
-              autoComplete="email"
               required
-              className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-base focus:border-neutral-900 focus:outline-none"
+              autoComplete="email"
+              placeholder="vous@exemple.com"
+              className="h-13 rounded-2xl border border-[#e7e0d9] bg-surface px-4.5 text-[15px] outline-none transition focus:border-encre focus:ring-4 focus:ring-encre/8"
             />
           </div>
 
-          <div>
-            <label htmlFor="motDePasse" className="block text-sm font-medium text-neutral-700">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="password" className="text-[13px] font-semibold">
               Mot de passe
             </label>
             <input
-              id="motDePasse"
-              name="motDePasse"
+              id="password"
+              name="password"
               type="password"
-              autoComplete="current-password"
               required
-              className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-base focus:border-neutral-900 focus:outline-none"
+              autoComplete="current-password"
+              className="h-13 rounded-2xl border border-[#e7e0d9] bg-surface px-4.5 text-[15px] outline-none transition focus:border-encre focus:ring-4 focus:ring-encre/8"
             />
           </div>
 
           {erreur && (
-            <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p role="alert" className="rounded-2xl bg-attention-fond px-4 py-3 text-sm font-medium text-attention">
               {erreur}
             </p>
           )}
@@ -76,19 +98,27 @@ export default function PageConnexion() {
           <button
             type="submit"
             disabled={enCours}
-            className="w-full rounded-lg bg-neutral-900 py-2.5 text-base font-medium text-white hover:bg-neutral-800 disabled:opacity-60"
+            className="mt-1.5 h-13.5 rounded-full bg-encre text-[15px] font-semibold text-white shadow-[0_12px_28px_-14px_rgb(28_25_23/0.7)] transition hover:-translate-y-px disabled:opacity-60"
           >
             {enCours ? "Connexion…" : "Se connecter"}
           </button>
+          <p className="text-[13px] text-encre-pale">Accès réservé à la gérante du club.</p>
         </form>
-      </div>
+
+        <p className="text-xs text-encre-pale">Ennasr · Avenue Hédi Nouira · Résidence Atlantique</p>
+      </section>
+
+      {/* Droite : collage d'œuvres */}
+      <section
+        aria-label="Créations du club"
+        className="fond-collage m-3 flex min-w-0 flex-[1.3_1_520px] flex-col justify-between gap-8 overflow-hidden rounded-[32px] p-7 md:m-4 md:p-12"
+      >
+        <h2 className="apparition max-w-[520px] text-4xl leading-none font-semibold tracking-[-0.035em] [animation-delay:200ms] md:text-[56px]">
+          Un espace pour <span className="font-serif text-[1.15em] font-normal italic">créer</span>, explorer et imaginer.
+        </h2>
+        <CollageOeuvres className="min-h-[240px] md:min-h-[380px]" />
+        <p className="text-[13px] text-neutre">Les vraies photos des œuvres du club remplaceront ces dessins.</p>
+      </section>
     </main>
   );
-}
-
-// Traduit les erreurs de Better Auth en messages clairs pour la gérante
-function messageErreur(status?: number, code?: string) {
-  if (status === 429) return "Trop de tentatives. Patiente une minute avant de réessayer.";
-  if (code === "INVALID_EMAIL_OR_PASSWORD") return "E-mail ou mot de passe incorrect.";
-  return "Connexion impossible pour le moment. Réessaie.";
 }

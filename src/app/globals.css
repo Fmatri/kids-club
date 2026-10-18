@@ -182,3 +182,34 @@
     transform: none;
   }
 }
+/* Fond du panneau collage (connexion, plus tard la vitrine) */
+@utility fond-collage {
+  background-color: #fbf3ec;
+  background-image:
+    radial-gradient(700px 400px at 20% 0%, #fbe1e2 0%, transparent 70%),
+    radial-gradient(700px 500px at 100% 100%, #e3dcfa 0%, transparent 70%);
+}
+
+/* Œuvre du collage : inclinée, s'ouvre en éventail, se redresse au survol */
+@utility oeuvre {
+  transform: translateY(var(--y, 0)) rotate(var(--r, 0deg));
+  transition:
+    transform 0.5s var(--ease-premium),
+    box-shadow 0.5s var(--ease-premium);
+  animation: eventail 1s var(--ease-premium) backwards;
+  &:hover {
+    transform: translateY(-14px) rotate(0deg) scale(1.04);
+    z-index: 3;
+  }
+}
+
+@keyframes eventail {
+  from {
+    opacity: 0;
+    transform: translateY(48px) rotate(0deg) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(var(--y, 0)) rotate(var(--r, 0deg));
+  }
+}
