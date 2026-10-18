@@ -25,3 +25,18 @@ export function calculerAge(naissance: Date, maintenant = new Date()) {
   if (mois < 0 || (mois === 0 && maintenant.getUTCDate() < naissance.getUTCDate())) age--;
   return age;
 }
+// Date du calendrier (stockée à minuit UTC) → "12 mars 2018"
+export function formatDate(date: Date) {
+  return new Intl.DateTimeFormat("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}
+
+// Numéro → lien WhatsApp (8 chiffres = numéro tunisien → indicatif 216)
+export function lienWhatsApp(tel: string) {
+  const chiffres = tel.replace(/\D/g, "");
+  return `https://wa.me/${chiffres.length === 8 ? `216${chiffres}` : chiffres}`;
+}
