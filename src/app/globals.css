@@ -167,3 +167,18 @@
     radial-gradient(1200px 600px at 85% -10%, #fbe7da 0%, transparent 60%),
     radial-gradient(900px 500px at -10% 30%, #ece6fa 0%, transparent 55%);
 }
+/* Apparition douce des blocs (opacité + léger glissement vers le haut) */
+@utility apparition {
+  animation: apparition 0.7s var(--ease-premium) backwards;
+}
+
+@keyframes apparition {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
