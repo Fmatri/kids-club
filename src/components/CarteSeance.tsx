@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Pencil, Users } from "lucide-react";
+import InterrupteurSeance from "@/components/InterrupteurSeance";
 import { formatDinars, formatHeure, pluriel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -21,41 +22,46 @@ export default function CarteSeance({ seance, delai }: { seance: DonneesSeance; 
     seance.capacite != null
       ? `${seance.inscrits} / ${seance.capacite} places`
       : pluriel(seance.inscrits, "inscrit");
+  const horaire = `${formatHeure(seance.heureDebut)} – ${formatHeure(seance.heureFin)}`;
 
   return (
-    <Link
-      href={`/admin/seances/${seance.id}`}
+    <article
       className={cn(
-        "group apparition flex flex-col gap-5 rounded-carte p-5 shadow-carte transition duration-300 ease-premium hover:-translate-y-[3px] hover:shadow-carte-survol",
+        "group apparition relative flex flex-col gap-5 rounded-carte p-5 shadow-carte transition duration-300 ease-premium hover:-translate-y-[3px] hover:shadow-carte-survol",
         !seance.active
-          ? "border border-bordure bg-surface opacity-70"
+          ? "border border-bordure bg-surface"
           : seance.public === "enfant"
             ? "bg-linear-145 from-pastel-lavande to-[#ebe6fb]"
             : "bg-linear-145 from-pastel-peche to-[#fcebd9]",
       )}
       style={{ animationDelay: `${delai}ms` }}
     >
-      <div className="flex items-start justify-between gap-3">
+      {/* Lien invisible qui recouvre toute la carte → page de modification */}
+      <Link
+        href={`/admin/seances/${seance.id}`}
+        className="absolute inset-0 rounded-carte focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-encre"
+      >
+        <span className="sr-only">Modifier la séance {horaire}</span>
+      </Link>
+
+      <div className={cn("pointer-events-none relative flex items-start justify-between gap-3", !seance.active && "opacity-60")}>
         <div>
-          <p className="text-2xl font-semibold tracking-tight">
-            {formatHeure(seance.heureDebut)} – {formatHeure(seance.heureFin)}
-          </p>
+          <p className="text-2xl font-semibold tracking-tight">{horaire}</p>
           <p className="mt-1 text-sm text-encre-douce">
             {seance.animateur ? `Avec ${seance.animateur}` : "Arts plastiques"}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold">
-            {seance.public === "enfant" ? "Enfants" : "Adultes"}
-          </span>
           <span className="flex size-8 items-center justify-center rounded-full bg-white/70 opacity-0 transition group-hover:opacity-100">
             <Pencil className="size-3.5" strokeWidth={2} aria-hidden />
-            <span className="sr-only">Modifier</span>
+          </span>
+          <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold">
+            {seance.public === "enfant" ? "Enfants" : "Adultes"}
           </span>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 text-sm">
+      <div className={cn("pointer-events-none relative flex flex-wrap items-center gap-2 text-sm", !seance.active && "opacity-60")}>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1.5 font-medium">
           <Users className="size-4" strokeWidth={1.8} aria-hidden />
           {texteInscrits}
@@ -69,6 +75,8 @@ export default function CarteSeance({ seance, delai }: { seance: DonneesSeance; 
           </span>
         )}
       </div>
-    </Link>
+
+      <InterrupteurSeance id={seance.id} active={seance.active} />
+    </article>
   );
 }

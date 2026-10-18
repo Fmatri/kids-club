@@ -23,7 +23,7 @@ export default async function PageModifierSeance({ params }: { params: Promise<{
       <EnTetePage
         titre="Modifier la"
         accent="séance"
-        description={`${nomJour} · ${formatHeure(s.heureDebut)} – ${formatHeure(s.heureFin)}`}
+        description={`${nomJour} · ${formatHeure(s.heureDebut)} – ${formatHeure(s.heureFin)}${s.active ? "" : " · désactivée"}`}
       />
       <FormulaireSeance
         initial={{

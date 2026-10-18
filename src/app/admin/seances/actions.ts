@@ -5,7 +5,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { connectDB } from "@/lib/db";
+import { pluriel } from "@/lib/format";
 import { exigerAdmin } from "@/lib/session";
+import { Inscription } from "@/models/Inscription";
 import { PUBLICS_SEANCE, Seance } from "@/models/Seance";
 
 export type EtatFormulaire = {
@@ -61,6 +63,7 @@ function erreurMongo(e: unknown): EtatFormulaire {
   return { message: "Erreur inattendue. Réessayez." };
 }
 
+// Ajouter ou modifier une séance
 export async function enregistrerSeance(
   _etat: EtatFormulaire,
   formData: FormData,
@@ -97,11 +100,40 @@ export async function enregistrerSeance(
       capacite: d.capacite ?? undefined,
       animateur: d.animateur || undefined,
     });
-    await seance.save(); // save() → les règles du modèle s'appliquent
+    await seance.save();
   } catch (e) {
     return { ...erreurMongo(e), valeurs };
   }
 
   revalidatePath("/admin/seances");
   redirect("/admin/seances");
+}
+
+// Activer ou désactiver une séance (jamais de suppression)
+export async function basculerActiviteSeance(id: string): Promise<EtatFormulaire> {
+  await exigerAdmin();
+
+  if (!isValidObjectId(id)) return { message: "Séance introuvable." };
+  await connectDB();
+  const seance = await Seance.findById(id);
+  if (!seance) return { message: "Séance introuvable." };
+
+  if (seance.active) {
+    const enCours = await Inscription.countDocuments({ seance: seance._id, enCours: true });
+    if (enCours > 0) {
+      return {
+        message: `Impossible : ${pluriel(enCours, "inscription")} en cours. Terminez-les d’abord (module Participants).`,
+      };
+    }
+  }
+
+  seance.active = !seance.active;
+  try {
+    await seance.save();
+  } catch (e) {
+    return erreurMongo(e); // ex. réactivation sur un créneau déjà pris
+  }
+
+  revalidatePath("/admin/seances");
+  return {};
 }
