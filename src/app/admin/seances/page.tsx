@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Plus } from "lucide-react";
 import CarteSeance, { type DonneesSeance } from "@/components/CarteSeance";
 import EnTetePage from "@/components/EnTetePage";
 import { connectDB } from "@/lib/db";
@@ -52,6 +54,15 @@ export default async function PageSeances() {
         accent="séances"
         description={`${pluriel(actives.length, "séance")} par semaine · horaires, public, tarif et capacité.`}
       />
+            <div className="apparition -mt-3 mb-7 [animation-delay:80ms]">
+        <Link
+          href="/admin/seances/nouvelle"
+          className="inline-flex h-11 items-center gap-2 rounded-full bg-encre px-5 text-sm font-semibold text-white shadow-[0_8px_20px_-10px_rgb(28_25_23/0.6)] transition hover:-translate-y-px"
+        >
+          <Plus className="size-4" strokeWidth={2} aria-hidden />
+          Nouvelle séance
+        </Link>
+      </div>
 
       {jours.length === 0 && (
         <p className="apparition rounded-carte border border-bordure bg-surface px-6 py-12 text-center text-encre-douce">

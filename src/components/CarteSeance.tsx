@@ -1,4 +1,5 @@
-import { Users } from "lucide-react";
+import Link from "next/link";
+import { Pencil, Users } from "lucide-react";
 import { formatDinars, formatHeure, pluriel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -22,9 +23,10 @@ export default function CarteSeance({ seance, delai }: { seance: DonneesSeance; 
       : pluriel(seance.inscrits, "inscrit");
 
   return (
-    <article
+    <Link
+      href={`/admin/seances/${seance.id}`}
       className={cn(
-        "apparition flex flex-col gap-5 rounded-carte p-5 shadow-carte transition duration-300 ease-premium hover:-translate-y-[3px] hover:shadow-carte-survol",
+        "group apparition flex flex-col gap-5 rounded-carte p-5 shadow-carte transition duration-300 ease-premium hover:-translate-y-[3px] hover:shadow-carte-survol",
         !seance.active
           ? "border border-bordure bg-surface opacity-70"
           : seance.public === "enfant"
@@ -42,9 +44,15 @@ export default function CarteSeance({ seance, delai }: { seance: DonneesSeance; 
             {seance.animateur ? `Avec ${seance.animateur}` : "Arts plastiques"}
           </p>
         </div>
-        <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold">
-          {seance.public === "enfant" ? "Enfants" : "Adultes"}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold">
+            {seance.public === "enfant" ? "Enfants" : "Adultes"}
+          </span>
+          <span className="flex size-8 items-center justify-center rounded-full bg-white/70 opacity-0 transition group-hover:opacity-100">
+            <Pencil className="size-3.5" strokeWidth={2} aria-hidden />
+            <span className="sr-only">Modifier</span>
+          </span>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -61,6 +69,6 @@ export default function CarteSeance({ seance, delai }: { seance: DonneesSeance; 
           </span>
         )}
       </div>
-    </article>
+    </Link>
   );
 }
