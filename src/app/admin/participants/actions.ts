@@ -11,9 +11,10 @@ import { Participant } from "@/models/Participant";
 import { Saison } from "@/models/Saison";
 import { Seance } from "@/models/Seance";
 
-export type EtatInscription = { erreurs?: Record<string, string>; message?: string };
+export type EtatInscription = { erreurs?: Record<string, string>; message?: string; ok?: boolean };
 
 const LIENS = ["mere", "pere", "tuteur"];
+const REGEX_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const texte = (fd: FormData, cle: string) => String(fd.get(cle) ?? "").trim();
 
 // Erreurs Mongoose → { "nom du champ": "message" } (avec un préfixe pour les parents)
@@ -25,6 +26,43 @@ function erreursDe(e: unknown, prefixe = ""): Record<string, string> {
   return r;
 }
 
+// Premier message d'erreur lisible
+function messageErreur(e: unknown) {
+  const premier = Object.values(erreursDe(e))[0];
+  if (premier) return premier;
+  if (typeof e === "object" && e !== null && "code" in e && e.code === 11000) {
+    return "Déjà inscrit(e) à cette séance.";
+  }
+  console.error(e);
+  return "L’enregistrement a échoué : rien n’a été modifié. Réessayez.";
+}
+
+// La séance peut-elle accueillir ce participant ?
+async function verifierSeance(idSeance: string, type: string): Promise<string | null> {
+  if (!isValidObjectId(idSeance)) return "Choisissez une séance.";
+  const s = await Seance.findById(idSeance).lean();
+  if (!s || !s.active) return "Cette séance n’existe plus ou est désactivée.";
+  if (s.public !== type) return "Cette séance ne correspond pas au public (enfant / adulte).";
+  if (s.capacite != null) {
+    const inscrits = await Inscription.countDocuments({ seance: s._id, enCours: true });
+    if (inscrits >= s.capacite) return "Cette séance est complète.";
+  }
+  return null;
+}
+
+function rafraichir(idParticipant: unknown) {
+  revalidatePath(`/admin/participants/${String(idParticipant)}`);
+  revalidatePath("/admin/participants");
+  revalidatePath("/admin/seances");
+}
+
+// Date du jour à Tunis (minuit UTC, comme toutes nos dates de calendrier)
+function aujourdhuiDate() {
+  return new Date(new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Tunis" }).format(new Date()));
+}
+
+// ---------- 1. Nouvelle inscription ----------
+
 export async function creerInscription(
   _etat: EtatInscription,
   fd: FormData,
@@ -35,11 +73,9 @@ export async function creerInscription(
   const type = texte(fd, "type") === "adulte" ? "adulte" : "enfant";
   const erreurs: Record<string, string> = {};
 
-  // Saison active
   const saison = await Saison.findOne({ active: true }).lean();
   if (!saison) return { message: "Aucune saison active : il faut d’abord en créer une." };
 
-  // Séances choisies
   const idsSeances = [...new Set(fd.getAll("seances").map(String))].filter((id) => isValidObjectId(id));
   const seances = await Seance.find({ _id: { $in: idsSeances }, active: true }).lean();
   if (idsSeances.length === 0) erreurs.seances = "Choisissez au moins une séance";
@@ -53,9 +89,8 @@ export async function creerInscription(
   }
 
   const dateDebut = texte(fd, "dateDebut");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateDebut)) erreurs.dateDebut = "Date de début invalide";
+  if (!REGEX_DATE.test(dateDebut)) erreurs.dateDebut = "Date de début invalide";
 
-  // Parents (enfant uniquement)
   const liens: { parent: mongoose.Types.ObjectId; lien: string; principal: boolean }[] = [];
   const nouveauxParents: HydratedDocument<ParentType>[] = [];
 
@@ -101,7 +136,6 @@ export async function creerInscription(
     }
   }
 
-  // Participant
   const participant = new Participant({
     type,
     prenom: texte(fd, "prenom"),
@@ -136,19 +170,17 @@ export async function creerInscription(
     return { erreurs, message: "Certaines informations sont à corriger." };
   }
 
-  // Doublon : même personne déjà enregistrée ?
   const doublon = await Participant.findOne(
     type === "enfant"
       ? { nom: participant.nom, prenom: participant.prenom, dateNaissance: participant.dateNaissance }
       : { nom: participant.nom, prenom: participant.prenom, telephone: participant.telephone },
   )
-    .collation({ locale: "fr", strength: 1 }) // ignore majuscules et accents
+    .collation({ locale: "fr", strength: 1 })
     .lean();
   if (doublon) {
     return { message: `${participant.prenom} ${participant.nom} est déjà enregistré(e). Cherchez sa fiche dans Participants.` };
   }
 
-  // Enregistrement TOUT OU RIEN (transaction)
   try {
     await mongoose.connection.transaction(async (session) => {
       for (const parent of nouveauxParents) await parent.save({ session });
@@ -171,7 +203,9 @@ export async function creerInscription(
   revalidatePath("/admin/seances");
   redirect(`/admin/participants/${participant._id}`);
 }
-// Modifier un participant (les parents se gèrent depuis la page Parents)
+
+// ---------- 2. Modifier un participant ----------
+
 export async function modifierParticipant(
   id: string,
   _etat: EtatInscription,
@@ -217,13 +251,10 @@ export async function modifierParticipant(
     return { erreurs: erreursDe(e), message: "Certaines informations sont à corriger." };
   }
 
-  // Date du jour à Tunis (minuit UTC, comme toutes nos dates de calendrier)
-  const aujourdhui = new Date(new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Tunis" }).format(new Date()));
-
+  const aujourdhui = aujourdhuiDate();
   try {
     await mongoose.connection.transaction(async (session) => {
       await participant.save({ session });
-      // Passage en inactif → on termine ses inscriptions en cours
       if (ancienStatut === "actif" && statut === "inactif") {
         const enCours = await Inscription.find({ participant: participant._id, enCours: true }).session(session);
         for (const inscription of enCours) {
@@ -237,8 +268,113 @@ export async function modifierParticipant(
     return { message: "L’enregistrement a échoué : rien n’a été modifié. Réessayez." };
   }
 
-  revalidatePath("/admin/participants");
-  revalidatePath(`/admin/participants/${id}`);
-  revalidatePath("/admin/seances");
+  rafraichir(id);
   redirect(`/admin/participants/${id}`);
+}
+
+// ---------- 3. Gérer les inscriptions depuis la fiche ----------
+
+export async function terminerInscription(
+  idInscription: string,
+  _etat: EtatInscription,
+  fd: FormData,
+): Promise<EtatInscription> {
+  await exigerAdmin(); // OBLIGATOIRE
+
+  const date = texte(fd, "date");
+  if (!REGEX_DATE.test(date)) return { message: "Date invalide." };
+  if (!isValidObjectId(idInscription)) return { message: "Inscription introuvable." };
+
+  await connectDB();
+  const inscription = await Inscription.findById(idInscription);
+  if (!inscription || !inscription.enCours) return { message: "Inscription introuvable ou déjà terminée." };
+
+  inscription.set({ dateFin: date });
+  try {
+    await inscription.save();
+  } catch (e) {
+    return { message: messageErreur(e) };
+  }
+  rafraichir(inscription.participant);
+  return { ok: true };
+}
+
+export async function changerSeance(
+  idInscription: string,
+  _etat: EtatInscription,
+  fd: FormData,
+): Promise<EtatInscription> {
+  await exigerAdmin(); // OBLIGATOIRE
+
+  const date = texte(fd, "date");
+  const idSeance = texte(fd, "seance");
+  if (!REGEX_DATE.test(date)) return { message: "Date invalide." };
+  if (!isValidObjectId(idInscription)) return { message: "Inscription introuvable." };
+
+  await connectDB();
+  const ancienne = await Inscription.findById(idInscription);
+  if (!ancienne || !ancienne.enCours) return { message: "Inscription introuvable ou déjà terminée." };
+  const participant = await Participant.findById(ancienne.participant).lean();
+  if (!participant) return { message: "Participant introuvable." };
+  if (participant.statut === "inactif") return { message: "Réactivez d’abord ce participant (bouton Modifier)." };
+  if (String(ancienne.seance) === idSeance) return { message: "C’est déjà sa séance actuelle." };
+
+  const probleme = await verifierSeance(idSeance, participant.type);
+  if (probleme) return { message: probleme };
+
+  ancienne.set({ dateFin: date });
+  const nouvelle = new Inscription({
+    participant: participant._id,
+    seance: idSeance,
+    saison: ancienne.saison,
+    dateDebut: date,
+  });
+
+  try {
+    await mongoose.connection.transaction(async (session) => {
+      await ancienne.save({ session });
+      await nouvelle.save({ session });
+    });
+  } catch (e) {
+    return { message: messageErreur(e) };
+  }
+  rafraichir(participant._id);
+  return { ok: true };
+}
+
+export async function ajouterSeance(
+  idParticipant: string,
+  _etat: EtatInscription,
+  fd: FormData,
+): Promise<EtatInscription> {
+  await exigerAdmin(); // OBLIGATOIRE
+
+  const date = texte(fd, "date");
+  const idSeance = texte(fd, "seance");
+  if (!REGEX_DATE.test(date)) return { message: "Date invalide." };
+  if (!isValidObjectId(idParticipant)) return { message: "Participant introuvable." };
+
+  await connectDB();
+  const participant = await Participant.findById(idParticipant).lean();
+  if (!participant) return { message: "Participant introuvable." };
+  if (participant.statut === "inactif") return { message: "Réactivez d’abord ce participant (bouton Modifier)." };
+
+  const probleme = await verifierSeance(idSeance, participant.type);
+  if (probleme) return { message: probleme };
+
+  const saison = await Saison.findOne({ active: true }).lean();
+  if (!saison) return { message: "Aucune saison active." };
+
+  try {
+    await new Inscription({
+      participant: participant._id,
+      seance: idSeance,
+      saison: saison._id,
+      dateDebut: date,
+    }).save();
+  } catch (e) {
+    return { message: messageErreur(e) };
+  }
+  rafraichir(participant._id);
+  return { ok: true };
 }

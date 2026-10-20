@@ -13,6 +13,7 @@ import {
   Users,
 } from "lucide-react";
 import EnTetePage from "@/components/EnTetePage";
+import GestionInscriptions from "@/components/GestionInscriptions";
 import { connectDB } from "@/lib/db";
 import {
   calculerAge,
@@ -20,6 +21,7 @@ import {
   formatHeure,
   formatTelephone,
   lienWhatsApp,
+  pluriel,
 } from "@/lib/format";
 import { exigerAdmin } from "@/lib/session";
 import { cn } from "@/lib/utils";
@@ -99,14 +101,20 @@ export default async function PageParticipant({ params }: { params: Promise<{ id
   const p = await Participant.findById(id).lean();
   if (!p) notFound();
 
-  const [parents, inscriptions] = await Promise.all([
+  const [parents, inscriptions, seancesActives, comptes] = await Promise.all([
     Parent.find({ _id: { $in: p.parents.map((l) => l.parent) } }).lean(),
     Inscription.find({ participant: p._id }).sort({ dateDebut: -1 }).lean(),
+    Seance.find({ active: true, public: p.type }).sort({ jour: 1, heureDebut: 1 }).lean(),
+    Inscription.aggregate<{ _id: unknown; total: number }>([
+      { $match: { enCours: true } },
+      { $group: { _id: "$seance", total: { $sum: 1 } } },
+    ]),
   ]);
   const seances = await Seance.find({ _id: { $in: inscriptions.map((i) => i.seance) } }).lean();
 
   const parentParId = new Map(parents.map((x) => [String(x._id), x]));
   const seanceParId = new Map(seances.map((s) => [String(s._id), s]));
+  const inscrits = new Map(comptes.map((c) => [String(c._id), c.total]));
 
   // Parents liés, le principal en premier
   const liens = p.parents
@@ -116,22 +124,39 @@ export default async function PageParticipant({ params }: { params: Promise<{ id
     })
     .sort((a, b) => Number(b.principal) - Number(a.principal));
 
+  const libelleSeance = (s: { jour: number; heureDebut: string; heureFin: string }) =>
+    `${JOURS_SEMAINE[s.jour as keyof typeof JOURS_SEMAINE]} ${formatHeure(s.heureDebut)} – ${formatHeure(s.heureFin)}`;
   const decrireSeance = (idSeance: unknown) => {
     const s = seanceParId.get(String(idSeance));
     if (!s) return "Séance inconnue";
-    const jour = JOURS_SEMAINE[s.jour as keyof typeof JOURS_SEMAINE];
-    return `${jour} ${formatHeure(s.heureDebut)} – ${formatHeure(s.heureFin)}${s.active ? "" : " (désactivée)"}`;
+    return `${libelleSeance(s)}${s.active ? "" : " (désactivée)"}`;
   };
+
   const enCours = inscriptions.filter((i) => i.enCours);
   const terminees = inscriptions.filter((i) => !i.enCours);
 
+  // Séances proposées : actives, du bon public, pas déjà suivies
+  const dejaSuivies = new Set(enCours.map((i) => String(i.seance)));
+  const options = seancesActives
+    .filter((s) => !dejaSuivies.has(String(s._id)))
+    .map((s) => {
+      const n = inscrits.get(String(s._id)) ?? 0;
+      return {
+        id: String(s._id),
+        libelle: libelleSeance(s),
+        info: s.capacite != null ? `${n} / ${s.capacite} places` : pluriel(n, "inscrit"),
+        complet: s.capacite != null && n >= s.capacite,
+      };
+    });
+
+  const aujourdhui = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Tunis" }).format(new Date());
   const age = p.dateNaissance ? calculerAge(p.dateNaissance) : null;
   const allergies = p.sante?.allergies ?? [];
   const urgence = p.contactUrgence;
 
   return (
     <>
-            <div className="apparition mt-2 flex flex-wrap items-center justify-between gap-3">
+      <div className="apparition mt-2 flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/admin/participants"
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-encre-douce hover:text-encre"
@@ -245,18 +270,19 @@ export default async function PageParticipant({ params }: { params: Promise<{ id
           )}
         </Bloc>
 
-        {/* Séances */}
+        {/* Séances : gestion + historique */}
         <Bloc titre="Séances" icone={CalendarDays} className="lg:col-span-2" delai={300}>
-          {enCours.length === 0 && <p className="text-sm text-encre-douce">Aucune séance en cours.</p>}
-          {enCours.map((i) => (
-            <div
-              key={String(i._id)}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-pastel-lavande/60 px-4 py-3"
-            >
-              <span className="text-sm font-semibold">{decrireSeance(i.seance)}</span>
-              <span className="text-[13px] text-encre-douce">depuis le {formatDate(i.dateDebut)}</span>
-            </div>
-          ))}
+          <GestionInscriptions
+            idParticipant={id}
+            enCours={enCours.map((i) => ({
+              id: String(i._id),
+              libelle: decrireSeance(i.seance),
+              depuis: formatDate(i.dateDebut),
+            }))}
+            options={options}
+            aujourdhui={aujourdhui}
+            inactif={p.statut === "inactif"}
+          />
           {terminees.length > 0 && (
             <div className="flex flex-col gap-2">
               <p className="text-[13px] font-semibold text-encre-pale">Historique</p>

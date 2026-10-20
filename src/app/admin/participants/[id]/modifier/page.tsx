@@ -55,7 +55,7 @@ export default async function PageModifierParticipant({ params }: { params: Prom
           urgenceTelephone: p.contactUrgence?.telephone ?? "",
           urgenceLien: p.contactUrgence?.lien ?? "",
           notes: p.notes ?? "",
-          seacesEnCours,
+          seancesEnCours,
           aujourdhui: new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Tunis" }).format(new Date()),
         }}
       />
