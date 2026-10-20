@@ -6,6 +6,7 @@ import {
   CalendarDays,
   HeartPulse,
   MessageCircle,
+  Pencil,
   Phone,
   ShieldAlert,
   User,
@@ -130,13 +131,22 @@ export default async function PageParticipant({ params }: { params: Promise<{ id
 
   return (
     <>
-      <Link
-        href="/admin/participants"
-        className="apparition mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-encre-douce hover:text-encre"
-      >
-        <ArrowLeft className="size-4" strokeWidth={2} aria-hidden />
-        Participants
-      </Link>
+            <div className="apparition mt-2 flex flex-wrap items-center justify-between gap-3">
+        <Link
+          href="/admin/participants"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-encre-douce hover:text-encre"
+        >
+          <ArrowLeft className="size-4" strokeWidth={2} aria-hidden />
+          Participants
+        </Link>
+        <Link
+          href={`/admin/participants/${id}/modifier`}
+          className="inline-flex h-10 items-center gap-2 rounded-full bg-encre px-5 text-sm font-semibold text-white shadow-[0_8px_20px_-10px_rgb(28_25_23/0.6)] transition hover:-translate-y-px"
+        >
+          <Pencil className="size-4" strokeWidth={2} aria-hidden />
+          Modifier
+        </Link>
+      </div>
 
       <EnTetePage
         titre={p.prenom}

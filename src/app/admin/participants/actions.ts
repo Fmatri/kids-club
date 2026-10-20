@@ -171,3 +171,74 @@ export async function creerInscription(
   revalidatePath("/admin/seances");
   redirect(`/admin/participants/${participant._id}`);
 }
+// Modifier un participant (les parents se gèrent depuis la page Parents)
+export async function modifierParticipant(
+  id: string,
+  _etat: EtatInscription,
+  fd: FormData,
+): Promise<EtatInscription> {
+  await exigerAdmin(); // OBLIGATOIRE
+
+  if (!isValidObjectId(id)) return { message: "Participant introuvable." };
+  await connectDB();
+  const participant = await Participant.findById(id);
+  if (!participant) return { message: "Participant introuvable." };
+
+  const ancienStatut = participant.statut;
+  const statut = texte(fd, "statut") === "inactif" ? "inactif" : "actif";
+
+  participant.set({
+    prenom: texte(fd, "prenom"),
+    nom: texte(fd, "nom"),
+    dateNaissance: participant.type === "enfant" ? texte(fd, "dateNaissance") || undefined : undefined,
+    telephone: participant.type === "adulte" ? texte(fd, "telephone") || undefined : undefined,
+    email: participant.type === "adulte" ? texte(fd, "email") || undefined : undefined,
+    autorisationPhoto: fd.get("autorisationPhoto") === "on",
+    statut,
+    contactUrgence: {
+      nom: texte(fd, "contactUrgence.nom") || undefined,
+      telephone: texte(fd, "contactUrgence.telephone") || undefined,
+      lien: texte(fd, "contactUrgence.lien") || undefined,
+    },
+    sante: {
+      allergies: texte(fd, "sante.allergies")
+        .split(",")
+        .map((a) => a.trim())
+        .filter(Boolean)
+        .slice(0, 20),
+      remarques: texte(fd, "sante.remarques") || undefined,
+    },
+    notes: texte(fd, "notes") || undefined,
+  });
+
+  try {
+    await participant.validate();
+  } catch (e) {
+    return { erreurs: erreursDe(e), message: "Certaines informations sont à corriger." };
+  }
+
+  // Date du jour à Tunis (minuit UTC, comme toutes nos dates de calendrier)
+  const aujourdhui = new Date(new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Tunis" }).format(new Date()));
+
+  try {
+    await mongoose.connection.transaction(async (session) => {
+      await participant.save({ session });
+      // Passage en inactif → on termine ses inscriptions en cours
+      if (ancienStatut === "actif" && statut === "inactif") {
+        const enCours = await Inscription.find({ participant: participant._id, enCours: true }).session(session);
+        for (const inscription of enCours) {
+          inscription.dateFin = inscription.dateDebut > aujourdhui ? inscription.dateDebut : aujourdhui;
+          await inscription.save({ session });
+        }
+      }
+    });
+  } catch (e) {
+    console.error(e);
+    return { message: "L’enregistrement a échoué : rien n’a été modifié. Réessayez." };
+  }
+
+  revalidatePath("/admin/participants");
+  revalidatePath(`/admin/participants/${id}`);
+  revalidatePath("/admin/seances");
+  redirect(`/admin/participants/${id}`);
+}
