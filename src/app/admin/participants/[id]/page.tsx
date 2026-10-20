@@ -12,6 +12,7 @@ import {
   User,
   Users,
 } from "lucide-react";
+import BilanPresence from "@/components/BilanPresence";
 import EnTetePage from "@/components/EnTetePage";
 import GestionInscriptions from "@/components/GestionInscriptions";
 import { connectDB } from "@/lib/db";
@@ -92,10 +93,25 @@ function Telephone({ numero, whatsapp }: { numero: string; whatsapp?: string | n
   );
 }
 
-export default async function PageParticipant({ params }: { params: Promise<{ id: string }> }) {
+export default async function PageParticipant({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await exigerAdmin();
   const { id } = await params;
+  const sp = await searchParams;
   if (!isValidObjectId(id)) notFound();
+
+  // Date du jour et mois affiché dans le bilan (jamais dans le futur)
+  const aujourdhui = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Tunis" }).format(new Date());
+  const moisActuel = aujourdhui.slice(0, 7);
+  const mois =
+    typeof sp.mois === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(sp.mois) && sp.mois <= moisActuel
+      ? sp.mois
+      : moisActuel;
 
   await connectDB();
   const p = await Participant.findById(id).lean();
@@ -149,7 +165,6 @@ export default async function PageParticipant({ params }: { params: Promise<{ id
       };
     });
 
-  const aujourdhui = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Tunis" }).format(new Date());
   const age = p.dateNaissance ? calculerAge(p.dateNaissance) : null;
   const allergies = p.sante?.allergies ?? [];
   const urgence = p.contactUrgence;
@@ -301,6 +316,9 @@ export default async function PageParticipant({ params }: { params: Promise<{ id
             </div>
           )}
         </Bloc>
+
+        {/* Présence du mois */}
+        <BilanPresence idParticipant={id} mois={mois} moisActuel={moisActuel} />
       </div>
     </>
   );
