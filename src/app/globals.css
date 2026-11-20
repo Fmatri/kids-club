@@ -213,3 +213,17 @@
     transform: translateY(var(--y, 0)) rotate(var(--r, 0deg));
   }
 }
+/* Barre de graphique qui pousse depuis le bas */
+@utility pousse {
+  transform-origin: bottom;
+  animation: pousse 1.1s var(--ease-premium) backwards;
+}
+
+@keyframes pousse {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
