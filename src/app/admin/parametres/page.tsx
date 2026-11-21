@@ -1,19 +1,34 @@
-import { SlidersHorizontal } from "lucide-react";
 import EnTetePage from "@/components/EnTetePage";
-import EtatVide from "@/components/EtatVide";
+import FormulaireParametres from "@/components/FormulaireParametres";
+import { connectDB } from "@/lib/db";
 import { exigerAdmin } from "@/lib/session";
+import { Parametres } from "@/models/Parametres";
 
-export default async function Page() {
+export default async function PageParametres() {
   await exigerAdmin();
+  await connectDB();
+
+  const p = await Parametres.findOne({ cle: "club" }).lean();
 
   return (
     <>
       <EnTetePage
         titre="Paramètres du"
         accent="club"
-        description="Nom, adresse, contacts et réseaux sociaux du club."
+        description="Ces informations seront affichées sur le site vitrine."
       />
-      <EtatVide icone={SlidersHorizontal} couleur="bg-pastel-rose" />
+      <FormulaireParametres
+        v={{
+          nomClub: p?.nomClub ?? "Pygmalion Art Club",
+          adresse: p?.adresse ?? "",
+          lienCarte: p?.lienCarte ?? "",
+          telephone: p?.telephone ?? "",
+          whatsapp: p?.whatsapp ?? "",
+          email: p?.email ?? "",
+          facebook: p?.reseauxSociaux?.facebook ?? "",
+          instagram: p?.reseauxSociaux?.instagram ?? "",
+        }}
+      />
     </>
   );
 }
