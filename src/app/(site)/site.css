@@ -1,0 +1,173 @@
+/* Site vitrine : tous les styles sont limités à .vitrine (l'admin n'est jamais touché) */
+.vitrine {
+  --papier: #f5f0e8;
+  --encre: #1f1b18;
+  --encre-douce: #5f5750;
+  --peche: #fad9b8;
+  --lavande: #8b7be0;
+  --voile: rgba(245, 240, 232, 0.45);
+  --titre: var(--font-bricolage), "Segoe UI", system-ui, sans-serif;
+  --logo: var(--font-fraunces), Georgia, serif;
+  --main: var(--font-caveat), "Segoe Print", cursive;
+  --courbe: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  position: relative;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  color: var(--encre);
+  font-family: var(--titre);
+
+  & a { color: inherit; }
+  & a:focus-visible, & button:focus-visible, & .piste:focus-visible {
+    outline: 2px solid var(--encre);
+    outline-offset: 3px;
+  }
+
+  /* ---------- Fond : lavis de couleurs ---------- */
+  & .fond { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  & .lavis { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.45; }
+  & .lavis.a { width: 40vmax; height: 40vmax; left: -16vmax; top: -12vmax; background: #fad9b8; }
+  & .lavis.b { width: 36vmax; height: 36vmax; right: -14vmax; top: 18vh; background: #d9d0f7; }
+  & .lavis.c { width: 34vmax; height: 34vmax; left: 34vw; bottom: -24vmax; background: #c3ebdb; }
+
+  /* ---------- Barre du haut ---------- */
+  & .nav {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px clamp(16px, 4vw, 40px);
+  }
+  & .marque { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+  & .marque-signe { width: 30px; height: 30px; flex: none; }
+  & .marque-nom { font-family: var(--logo); font-style: italic; font-weight: 600; font-size: 24px; letter-spacing: -0.01em; }
+  & .liens { display: flex; gap: clamp(14px, 2.4vw, 30px); font-size: 14px; font-weight: 600; }
+  & .liens a { text-decoration: none; }
+  & .liens a:hover { text-decoration: underline; text-underline-offset: 4px; }
+  & .actions { display: flex; gap: 8px; }
+  & .pilule {
+    display: inline-flex;
+    align-items: center;
+    height: 36px;
+    padding: 0 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform 0.25s var(--courbe);
+  }
+  & .pilule:hover { transform: translateY(-1px); }
+  & .pilule.clair { background: #fff; color: var(--encre); box-shadow: 0 1px 2px rgba(31, 27, 24, 0.08); }
+  & .pilule.sombre { background: #3d4447; color: #fff; }
+
+  /* ---------- Texte d'accueil ---------- */
+  & .hero {
+    position: relative;
+    max-width: 880px;
+    margin: 0 auto;
+    padding: clamp(14px, 3vh, 34px) 16px 0;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+  & .pastille { margin: 0; padding: 6px 14px; border-radius: 999px; background: var(--peche); font-size: 13px; font-weight: 600; }
+  & h1 {
+    margin: 0;
+    font-weight: 600;
+    font-size: clamp(34px, 5.4vw, 68px);
+    line-height: 1.04;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+  & h1 .ligne { display: block; }
+  & .sous-titre {
+    margin: 0;
+    max-width: 560px;
+    font-size: clamp(15px, 1.5vw, 17px);
+    line-height: 1.55;
+    color: var(--encre-douce);
+    text-wrap: balance;
+  }
+
+  /* Annotations « à la main » */
+  & .note { position: absolute; font-family: var(--main); font-size: 22px; line-height: 1; pointer-events: none; }
+  & .note svg { display: block; overflow: visible; }
+  & .note path { fill: none; stroke: var(--encre); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  & .note-titre { left: -4%; top: 62%; }
+  & .note-album { right: -12%; top: 40%; rotate: 14deg; text-align: center; }
+
+  /* ---------- Album courbe sans fin ---------- */
+  & .album { position: relative; margin-top: clamp(10px, 2vh, 24px); padding-bottom: 40px; }  & .piste {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    overflow-x: auto;
+    padding: 34px 0 30px;
+    scrollbar-width: none;
+    cursor: grab;
+    outline: none;
+  }
+  & .piste::-webkit-scrollbar { display: none; }
+  & .piste.saisie { cursor: grabbing; }
+  & .carte {
+    flex: none;
+    width: clamp(132px, 14vw, 196px);
+    aspect-ratio: 3 / 4;
+    padding: 0;
+    border: 0;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #e9e2d7;
+    cursor: pointer;
+    transform: perspective(900px) rotateY(var(--rot, 0deg)) scale(var(--ech, 1)) translateY(var(--lift, 0px));
+    transition: box-shadow 0.35s var(--courbe);
+    box-shadow: 0 16px 30px -18px rgba(31, 27, 24, 0.45);
+  }
+  & .carte:hover { --lift: -10px; box-shadow: 0 26px 44px -20px rgba(31, 27, 24, 0.55); }
+  & .carte img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; user-select: none; }
+
+  /* ---------- Visionneuse ---------- */
+  & .visionneuse {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 16px;
+    background: var(--voile);
+    backdrop-filter: blur(18px) saturate(1.1);
+    -webkit-backdrop-filter: blur(18px) saturate(1.1);
+    cursor: zoom-out;
+    outline: none;
+  }
+  & .visionneuse[hidden] { display: none; }
+    /* Photo ouverte : tout le site derrière devient flou */
+  & > :not(.visionneuse) { transition: filter 0.45s var(--courbe); }
+  &.voile-actif > :not(.visionneuse) { filter: blur(14px); }
+  & .visionneuse img {
+    display: block;
+    border-radius: 22px;
+    object-fit: cover;
+    transform-origin: 0 0;
+    box-shadow: 0 40px 80px -30px rgba(31, 27, 24, 0.6);
+  }
+  & .legende { margin: 0; font-family: var(--main); font-size: clamp(24px, 3vw, 32px); text-align: center; }
+
+  @media (max-width: 860px) {
+    & .liens { display: none; }
+    & .note-titre, & .note-album { display: none; }
+  }
+  @media (max-width: 560px) {
+    & .actions .clair { display: none; }
+    & .carte { width: 38vw; }
+  }
+}
